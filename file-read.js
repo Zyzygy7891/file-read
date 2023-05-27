@@ -1,10 +1,11 @@
-const http = require('http');
 
-const fileUrl = 'https://www.budavartours.hu/binaries/content/assets/budavar/sitemap-bvt.xml'; // A letölteni kívánt fájl URL-je
+const remotefile = new URL('https://www.budavartours.hu/binaries/content/assets/budavar/sitemap-bvt.xml'); // A letölteni kívánt fájl URL-je
+
+const connection = require(remotefile.protocol.replace(':','')); // Az URL protokollja alapján létrehozott http vagy https
 
 function downloadFile(url) {
   return new Promise((resolve, reject) => {
-    http.get(url, (response) => {
+    connection.get(url, (response) => {
       const contentLength = response.headers['content-length']; // A válaszban kapott fájl mérete
 
       const dataChunks = []; // Buffer tömb a letöltött adatok tárolásához
@@ -14,7 +15,7 @@ function downloadFile(url) {
         dataChunks.push(chunk); // Letöltött adat hozzáadása a Buffer tömbhöz
         downloadedBytes += chunk.length; // Letöltött adat méretének frissítése
 
-        process.stdout.write(`Letöltve: ${downloadedBytes} bájt / ${contentLength} bájt\r`); // Kiírás a konzolra egy sorba
+        process.stdout.write(`Letöltve: ${(100*(downloadedBytes/contentLength)).toFixed(1)}% ${downloadedBytes} bájt / ${contentLength} bájt\r`); // Kiírás a konzolra egy sorba
       });
 
       response.on('end', () => {
@@ -31,7 +32,7 @@ function downloadFile(url) {
 
 async function main() {
   try {
-    const downloadedData = await downloadFile(fileUrl);
+    const downloadedData = await downloadFile(remotefile);
 
     // A teljes fájl letöltése befejeződött, a letöltött adat elérhető a downloadedData változóban
     console.log('Letöltött adat hossza:', downloadedData.length, 'bájt');
