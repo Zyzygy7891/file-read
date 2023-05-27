@@ -1,20 +1,33 @@
 
-const remotefile = new URL(''); // A letölteni kívánt fájl URL-je
-
-const connection = require(remotefile.protocol.replace(':', '')); // Az URL protokollja alapján létrehozott http vagy https
-const updateInterval = 500; // Frissítési periódus (másodperc)
+const remotefile = new URL('http://212.183.159.230/5MB.zip'); // A letölteni kívánt fájl URL-je
 
 function downloadFile(url) {
   return new Promise((resolve, reject) => {
-    connection.get(url, (response) => {
-      const logFileProgress = (downloadedBytes, contentLength, isAllMessageInOneLine=true)=>
-      {
-        process.stdout.write(`Letöltve: ${~~(100 * (downloadedBytes / contentLength))}% ${downloadedBytes} bájt / ${contentLength} bájt${isAllMessageInOneLine?'\r':'\n'}`);
+
+    function getConnectionByUrlProtocol(protocol)
+    {
+      switch(protocol){
+        case 'https:':
+          return 'https';
+        default:
+          return 'http';
       }
+    }
+
+    function logFileProgress(downloadedBytes, contentLength, isAllMessageInOneLine=true)
+    {
+      process.stdout.write(`Letöltve: ${~~(100 * (downloadedBytes / contentLength))}% ${downloadedBytes} bájt / ${contentLength} bájt${isAllMessageInOneLine?'\r':'\n'}`);
+    }
+
+    const MIN_UPDATE_INTERVAL_MS = 1000; // Frissítési periódus (másodperc)
+    const CONNECTION = require(getConnectionByUrlProtocol(remotefile.protocol)); // Az URL protokollja alapján létrehozott http vagy https
+    
+    CONNECTION.get(url, (response) => {
 
       const contentLength = response.headers['content-length']; // A válaszban kapott fájl mérete
-
+      
       const dataChunks = []; // Buffer tömb a letöltött adatok tárolásához
+
       let downloadedBytes = 0; // Letöltött bájtok száma
       let lastUpdate = Date.now(); // Utolsó frissítés időpontja
 
@@ -24,7 +37,7 @@ function downloadFile(url) {
         const currentTime = Date.now();
         const elapsedTime = currentTime - lastUpdate;
 
-        if (elapsedTime >= updateInterval) {
+        if (elapsedTime >= MIN_UPDATE_INTERVAL_MS) {
           logFileProgress(downloadedBytes, contentLength); // Fájl készültségének és méretének kiírása egyetlen sorba
           lastUpdate = currentTime; // Frissítési időpont frissítése
         }
